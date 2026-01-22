@@ -54,27 +54,3 @@ while True:
     except KeyboardInterrupt:
         break
         
-        
-# import time
-# import json
-# import paho.mqtt.client as mqtt
-# import random
-
-
-# mqttc = mqtt.Client(
-    # client_id="simulator",
-    # callback_api_version=mqtt.CallbackAPIVersion.VERSION1
-# )
-# mqttc.connect("localhost", 1883)
-# mqttc.loop_start()
-
-# while True:
-    # data = {
-        # "temperature": round(50 + random.random()*10, 1),
-        # "heating": random.choice([0, 1]),
-        # "set_temperature": 60
-    # }
-
-    # mqttc.publish("boiler/status", json.dumps(data), retain=True)
-    # time.sleep(1)
-
