@@ -201,18 +201,14 @@ int main(void)
 	  if (set_temp > TEMP_MAX) set_temp = TEMP_MAX;
 
 
-	  if(boiler_off) {
+	  if (boiler_off) {
 	      relay = false;
-	      HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_SET);
-	      HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
-	      HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
-	  } else {
-	  if (!relay && temp <= set_temp - TEMP_HYST){
-		  relay = true;
 	  }
-	  else if (relay && temp >= set_temp + TEMP_HYST){
-		  relay = false;
+	  else if (!relay && temp <= (set_temp - TEMP_HYST)) {
+	      relay = true;
 	  }
+	  else if (relay && temp >= (set_temp + TEMP_HYST)) {
+	      relay = false;
 	  }
 
 	  if (relay) {
@@ -230,9 +226,9 @@ int main(void)
 	  }
 	  printf("Temperature = %.1f*C\n", temp);
 	  printf("Set temperature = %d\n", set_temp);
-	  printf("heating = %d\n", boiler_off);
+	  printf("heating = %d\n", !boiler_off);
 	  len = snprintf(msg, sizeof(msg),
-	      "{\"temperature\":%.1f,\"heating\":%d,\"set_temperature\":%d}",
+	      "{\"temperature\":%.1f,\"heating\":%d,\"set_temperature\":%d}\n",
 	      temp,
 	      relay ? 1 : 0,
 	      set_temp
