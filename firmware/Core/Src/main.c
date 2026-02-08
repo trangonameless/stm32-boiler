@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "iwdg.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -42,9 +43,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TEMP_MIN 30
-#define TEMP_MAX 70
-#define TEMP_HYST 1
+#define TEMP_MIN 30  //minimum allowed temperature
+#define TEMP_MAX 70  //maximum allowed temperature(safety)
+#define TEMP_HYST 0.5 //hysteresis for on/off control
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -84,6 +85,7 @@ int __io_putchar(int ch)
 
 }
 
+//timer callback to update 7-seg display
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
@@ -116,8 +118,6 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-
-
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -136,6 +136,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_TIM7_Init();
   MX_TIM2_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
 
@@ -146,7 +147,7 @@ int main(void)
   uint8_t ds1[DS18B20_ROM_CODE_SIZE];
   char msg[64];
 
-
+  // Read DS18B20 ROM code
   if (ds18b20_read_address(ds1) != HAL_OK) {
 
     Error_Handler();
@@ -163,25 +164,24 @@ int main(void)
   while (1)
   {
 	  int len;
+
+	  // temperature measurement on DS18B20
 	  ds18b20_start_measure(NULL);
 
 	  HAL_Delay(750);
 
 	  float temp = ds18b20_get_temp(NULL);
 
+	  // sensor fault detection
 	  if (temp >= 80.0f)
 	  {
 		relay = false;
 		HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_SET);
 		printf("FAULT-> HEATING OFF\n");
 		continue;
-//	    printf("Sensor error...\n");
-//	    len = sprintf(msg, "Sensor error...\n");
-//	    HAL_UART_Transmit(&huart1, (uint8_t*)msg, len, HAL_MAX_DELAY);
-//	    printf("Temperature = %.1f*C\n", temp);
-//	    continue;
 	  }
 
+	  // IR remote control
 	  int value = ir_read();
 	    switch (value) {
 	    case IR_CODE_PLUS:
@@ -196,6 +196,9 @@ int main(void)
 
 	      break;
 	    }
+
+
+	  // relay control with hysteresis
 
 	  if (set_temp < TEMP_MIN) set_temp = TEMP_MIN;
 	  if (set_temp > TEMP_MAX) set_temp = TEMP_MAX;
@@ -227,18 +230,20 @@ int main(void)
 	  printf("Temperature = %.1f*C\n", temp);
 	  printf("Set temperature = %d\n", set_temp);
 	  printf("heating = %d\n", !boiler_off);
+
+      // Send JSON to Raspberry Pi
+
 	  len = snprintf(msg, sizeof(msg),
 	      "{\"temperature\":%.1f,\"heating\":%d,\"set_temperature\":%d}\n",
 	      temp,
 	      relay ? 1 : 0,
 	      set_temp
 	  );
-
-
-
 	      HAL_UART_Transmit(&huart1, (uint8_t*)msg, len, HAL_MAX_DELAY);
 
-	      HAL_Delay(1000);
+	      // watchdog
+		  HAL_IWDG_Refresh(&hiwdg);
+
 
     /* USER CODE END WHILE */
 
@@ -266,7 +271,8 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
