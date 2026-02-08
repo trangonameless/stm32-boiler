@@ -1,21 +1,3 @@
-# import serial
-
-# # Otwórz port szeregowy
-# sen = serial.Serial('/dev/serial0', 115200, timeout=1)
-
-# print('odbieranie danych')
-
-# while True:
-    # try:
-        # # Odczytaj linię z portu szeregowego, zdekoduj i usuń niepotrzebne spacje
-        # line = sen.readline().decode('utf-8', errors='ignore').strip()
-        
-        # if line:
-            # print(line)
-    # except KeyboardInterrupt:
-        # print("przerwano odczyt.")
-        # break
-
 import serial
 import json
 import paho.mqtt.client as mqtt
@@ -32,14 +14,14 @@ mqttc = mqtt.Client(
 mqttc.connect("localhost", 1883)
 mqttc.loop_start()
 
-print("UART → MQTT bridge uruchomiony")
+print("UART → MQTT bridge started")
 
 while True:
     try:
         line = ser.readline().decode('utf-8', errors='ignore').strip()
 
         if line:
-            data = json.loads(line)  # <- pasuje IDEALNIE
+            data = json.loads(line)  
 
             mqttc.publish(
                 topic="boiler/status",
@@ -49,7 +31,7 @@ while True:
             )
 
     except json.JSONDecodeError:
-        print("Niepoprawny JSON:", line)
+        print("wrong JSON:", line)
 
     except KeyboardInterrupt:
         break
