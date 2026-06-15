@@ -15,10 +15,10 @@ RPI receives data via UART to visualize the system state, set temperature and ac
 - Infrared Receiver Module
 
 ## Architecture
-STM32 → UART → Python → MQTT → Grafana
+STM32 → UART → Raspberry Pi 4 B → MQTT → Grafana
 
 ## Technologies
 - STM32 + HAL
-- Python 3
+- Raspberry Pi 4 B
 - MQTT (Mosquitto)
 - Grafana
